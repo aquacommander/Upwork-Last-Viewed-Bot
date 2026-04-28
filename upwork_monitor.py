@@ -24,16 +24,27 @@ from PIL import Image, ImageDraw
 from pathlib import Path
 
 # ============================================
-# CONFIGURATION  — CHANGE THESE BEFORE RUNNING
+# EXE-SAFE BASE DIRECTORY
+# When frozen as EXE, store data next to the EXE.
+# When running as .py, store next to the script.
 # ============================================
-CONFIG_FILE = "upwork_config.json"
-LOG_FILE    = "upwork_monitor_log.txt"
+if getattr(sys, "frozen", False):
+    # Running as PyInstaller EXE
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-YOUR_EMAIL    = "your_email@example.com"   # ← CHANGE THIS
-YOUR_PASSWORD = "your_password_here"        # ← CHANGE THIS
+# ============================================
+# CONFIGURATION
+# ============================================
+CONFIG_FILE = os.path.join(BASE_DIR, "upwork_config.json")
+LOG_FILE    = os.path.join(BASE_DIR, "upwork_monitor_log.txt")
 
-CHECK_INTERVAL = 30   # seconds between checks
-AUTO_START     = False # start monitoring automatically on launch
+YOUR_EMAIL    = "your_email@example.com"   # fallback default
+YOUR_PASSWORD = ""                          # never stored in code
+
+CHECK_INTERVAL = 30    # seconds between checks
+AUTO_START     = False  # start monitoring automatically on launch
 
 # ============================================
 # WINDOWS NOTIFICATION HANDLER
@@ -174,11 +185,17 @@ class UpworkMonitorBot:
         opts.add_argument("--disable-blink-features=AutomationControlled")
         opts.add_experimental_option("excludeSwitches", ["enable-automation"])
         opts.add_experimental_option("useAutomationExtension", False)
-        opts.add_argument("--headless=new")          # remove to see the browser
+        opts.add_argument("--headless=new")          # comment out to see the browser
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-dev-shm-usage")
+        opts.add_argument("--disable-gpu")
+        opts.add_argument("--window-size=1280,800")
 
         try:
+            # Cache the driver inside BASE_DIR so it survives across EXE runs
+            driver_cache = os.path.join(BASE_DIR, ".wdm")
+            os.environ["WDM_LOCAL"] = "1"
+            os.environ["WDM_CACHE_PATH"] = driver_cache
             service = Service(ChromeDriverManager().install())
             self.driver = webdriver.Chrome(service=service, options=opts)
             self.driver.get("https://www.upwork.com/ab/account-security/login")
@@ -626,7 +643,10 @@ class UpworkTrayApp:
 
     def _open_log(self) -> None:
         if os.path.exists(LOG_FILE):
-            os.startfile(LOG_FILE)
+            try:
+                os.startfile(LOG_FILE)          # Windows only — opens in Notepad
+            except Exception:
+                self.notifier.send("Upwork Monitor", f"Log: {LOG_FILE}")
         else:
             self.notifier.send("Upwork Monitor", "No log file yet.")
 
@@ -648,24 +668,21 @@ class UpworkTrayApp:
 # ============================================
 # ENTRY POINT
 # ============================================
-def _check_deps() -> bool:
-    missing = []
-    for pkg in ("selenium", "webdriver_manager", "pystray", "PIL"):
-        try:
-            __import__(pkg)
-        except ImportError:
-            missing.append(pkg)
-    if missing:
-        print(f"Missing packages: {missing}")
-        print("Run:  pip install -r requirements.txt")
-        return False
-    return True
-
-
 def main():
-    if not _check_deps():
-        input("Press Enter to exit…")
-        return
+    # When running as a frozen EXE, all deps are bundled — skip the check.
+    if not getattr(sys, "frozen", False):
+        missing = []
+        for pkg in ("selenium", "webdriver_manager", "pystray", "PIL"):
+            try:
+                __import__(pkg)
+            except ImportError:
+                missing.append(pkg)
+        if missing:
+            print(f"Missing packages: {missing}")
+            print("Run:  pip install -r requirements.txt")
+            input("Press Enter to exit…")
+            return
+
     app = UpworkTrayApp()
     app.run()
 
