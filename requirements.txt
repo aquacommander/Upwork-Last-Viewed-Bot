@@ -1,0 +1,13 @@
+# Core bot dependencies (cross-platform)
+selenium==4.20.0
+webdriver-manager==4.0.1
+pystray==0.19.5
+Pillow==10.3.0
+plyer==2.1.0
+
+# Windows-only notification packages (install on Windows target machine)
+# winotify==1.1.0
+# win10toast==0.9
+
+# EXE builder (Windows only)
+# pyinstaller==6.6.0
