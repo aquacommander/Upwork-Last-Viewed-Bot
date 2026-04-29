@@ -181,28 +181,45 @@ class UpworkMonitorBot:
     def login(self, email: str, password: str) -> bool:
         self.log("🔐 Logging into Upwork...")
         opts = Options()
+
+        # ── Anti-detection ────────────────────────────────────────────────
         opts.add_argument("--disable-blink-features=AutomationControlled")
         opts.add_experimental_option("excludeSwitches", ["enable-automation"])
         opts.add_experimental_option("useAutomationExtension", False)
-        opts.add_argument("--headless=new")   # comment this line out to see the browser
+
+        # ── Headless + stability flags (required inside a frozen EXE) ─────
+        opts.add_argument("--headless=new")
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-dev-shm-usage")
         opts.add_argument("--disable-gpu")
+        opts.add_argument("--disable-software-rasterizer")
+        opts.add_argument("--disable-extensions")
+        opts.add_argument("--disable-background-networking")
+        opts.add_argument("--disable-default-apps")
+        opts.add_argument("--disable-sync")
+        opts.add_argument("--disable-translate")
+        opts.add_argument("--metrics-recording-only")
+        opts.add_argument("--mute-audio")
+        opts.add_argument("--no-first-run")
+        opts.add_argument("--safebrowsing-disable-auto-update")
         opts.add_argument("--window-size=1280,800")
+        opts.add_argument("--remote-debugging-port=0")   # avoids port conflicts
+
+        # Use a temp user-data dir so multiple runs don't conflict
+        import tempfile
+        user_data = os.path.join(tempfile.gettempdir(), "upwork_monitor_chrome")
+        opts.add_argument(f"--user-data-dir={user_data}")
 
         try:
             # ── Driver setup ──────────────────────────────────────────────
-            # Selenium 4.10+ includes selenium-manager which automatically
-            # downloads the correct chromedriver for the current OS/Chrome
-            # version at runtime. No webdriver-manager needed.
-            # This is what fixes WinError 193 (Linux binary bundled in EXE).
+            # Selenium 4.10+ selenium-manager downloads the correct Windows
+            # chromedriver at runtime — no webdriver-manager needed.
             driver_path = self._get_chromedriver_path()
             if driver_path:
                 self.log(f"🔧 Using cached driver: {driver_path}")
                 service = Service(executable_path=driver_path)
                 self.driver = webdriver.Chrome(service=service, options=opts)
             else:
-                # Let Selenium-Manager auto-download the right Windows driver
                 self.log("🔧 Downloading correct ChromeDriver for this machine...")
                 self.driver = webdriver.Chrome(options=opts)
 
