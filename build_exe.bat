@@ -13,21 +13,20 @@ python --version >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Python not found.
     echo         Download from https://www.python.org/downloads/
-    echo         Make sure to tick "Add Python to PATH" during install.
+    echo         Tick "Add Python to PATH" during install.
     pause
     exit /b 1
 )
 echo [OK] Python found.
 
-:: ── Upgrade pip silently ────────────────────────────────────
+:: ── Upgrade pip ─────────────────────────────────────────────
 echo [..] Upgrading pip...
 python -m pip install --upgrade pip --quiet
 
-:: ── Install all required packages ───────────────────────────
-echo [..] Installing packages (this may take a minute)...
+:: ── Install packages ────────────────────────────────────────
+echo [..] Installing packages (may take a minute)...
 pip install ^
     selenium==4.20.0 ^
-    webdriver-manager==4.0.1 ^
     pystray==0.19.5 ^
     Pillow==10.3.0 ^
     plyer==2.1.0 ^
@@ -43,14 +42,20 @@ if errorlevel 1 (
 )
 echo [OK] All packages installed.
 
+:: ── NOTE: webdriver-manager is intentionally NOT installed ──
+:: Selenium 4.10+ has selenium-manager built in.
+:: It auto-downloads the correct Windows chromedriver at runtime.
+:: This prevents the WinError 193 "not a valid Win32 application" error
+:: that happens when a Linux chromedriver gets bundled into the EXE.
+
 :: ── Clean previous build ────────────────────────────────────
 echo [..] Cleaning previous build...
-if exist build     rmdir /s /q build
-if exist dist      rmdir /s /q dist
+if exist build              rmdir /s /q build
+if exist dist               rmdir /s /q dist
 if exist UpworkMonitor.spec del /q UpworkMonitor.spec
 
-:: ── Run PyInstaller ─────────────────────────────────────────
-echo [..] Building EXE (this takes 1-3 minutes)...
+:: ── Build EXE ───────────────────────────────────────────────
+echo [..] Building EXE (1-3 minutes)...
 echo.
 
 pyinstaller ^
@@ -74,48 +79,51 @@ pyinstaller ^
     --hidden-import=selenium.webdriver.chrome.options ^
     --hidden-import=selenium.webdriver.support.ui ^
     --hidden-import=selenium.webdriver.support.expected_conditions ^
-    --hidden-import=webdriver_manager ^
-    --hidden-import=webdriver_manager.chrome ^
+    --hidden-import=selenium.webdriver.common.by ^
     --hidden-import=tkinter ^
     --hidden-import=tkinter.messagebox ^
     --hidden-import=tkinter.scrolledtext ^
     --collect-all pystray ^
     --collect-all winotify ^
     --collect-all plyer ^
+    --collect-all selenium ^
+    --exclude-module webdriver_manager ^
     --noconfirm ^
     upwork_monitor.py
 
 if errorlevel 1 (
     echo.
-    echo [ERROR] PyInstaller build failed. See output above.
+    echo [ERROR] Build failed. See output above.
     pause
     exit /b 1
 )
 
-:: ── Verify output ───────────────────────────────────────────
+:: ── Verify and copy ─────────────────────────────────────────
 if not exist "dist\UpworkMonitor.exe" (
-    echo [ERROR] EXE not found after build. Something went wrong.
+    echo [ERROR] EXE not found after build.
     pause
     exit /b 1
 )
 
-:: ── Copy EXE to current folder ──────────────────────────────
 copy /y "dist\UpworkMonitor.exe" "UpworkMonitor.exe" >nul
+
 echo.
 echo ============================================================
 echo   BUILD SUCCESSFUL!
 echo ============================================================
 echo.
-echo   EXE location:  %CD%\UpworkMonitor.exe
+echo   EXE:  %CD%\UpworkMonitor.exe
+echo.
+echo   FIRST RUN NOTE:
+echo   On first launch, the bot will download the correct
+echo   ChromeDriver for your Windows Chrome version (~10 MB).
+echo   This only happens once. After that it starts instantly.
 echo.
 echo   HOW TO USE:
 echo   1. Double-click UpworkMonitor.exe
-echo   2. Look for the icon in your system tray (bottom-right)
-echo   3. Right-click the tray icon ^> Settings
-echo   4. Enter your Upwork email + password
-echo   5. Add Job IDs and click Start Monitoring
-echo.
-echo   The bot runs silently in the background and sends
-echo   Windows notifications when a client views your job.
+echo   2. Find the icon in your system tray (bottom-right)
+echo   3. Right-click icon ^> Settings
+echo   4. Enter Upwork email + password
+echo   5. Add Job IDs ^> Start Monitoring
 echo.
 pause

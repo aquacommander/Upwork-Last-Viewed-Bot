@@ -7,7 +7,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 import tkinter as tk
@@ -185,19 +184,28 @@ class UpworkMonitorBot:
         opts.add_argument("--disable-blink-features=AutomationControlled")
         opts.add_experimental_option("excludeSwitches", ["enable-automation"])
         opts.add_experimental_option("useAutomationExtension", False)
-        opts.add_argument("--headless=new")          # comment out to see the browser
+        opts.add_argument("--headless=new")   # comment this line out to see the browser
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-dev-shm-usage")
         opts.add_argument("--disable-gpu")
         opts.add_argument("--window-size=1280,800")
 
         try:
-            # Cache the driver inside BASE_DIR so it survives across EXE runs
-            driver_cache = os.path.join(BASE_DIR, ".wdm")
-            os.environ["WDM_LOCAL"] = "1"
-            os.environ["WDM_CACHE_PATH"] = driver_cache
-            service = Service(ChromeDriverManager().install())
-            self.driver = webdriver.Chrome(service=service, options=opts)
+            # ── Driver setup ──────────────────────────────────────────────
+            # Selenium 4.10+ includes selenium-manager which automatically
+            # downloads the correct chromedriver for the current OS/Chrome
+            # version at runtime. No webdriver-manager needed.
+            # This is what fixes WinError 193 (Linux binary bundled in EXE).
+            driver_path = self._get_chromedriver_path()
+            if driver_path:
+                self.log(f"🔧 Using cached driver: {driver_path}")
+                service = Service(executable_path=driver_path)
+                self.driver = webdriver.Chrome(service=service, options=opts)
+            else:
+                # Let Selenium-Manager auto-download the right Windows driver
+                self.log("🔧 Downloading correct ChromeDriver for this machine...")
+                self.driver = webdriver.Chrome(options=opts)
+
             self.driver.get("https://www.upwork.com/ab/account-security/login")
             time.sleep(3)
 
@@ -226,6 +234,30 @@ class UpworkMonitorBot:
         except Exception as exc:
             self.log(f"❌ Login failed: {exc}")
             return False
+
+    def _get_chromedriver_path(self):
+        """
+        Look for a valid Windows chromedriver.exe next to the EXE / script.
+        Returns the path if found and valid, otherwise None so Selenium-Manager
+        can download the correct one.
+        """
+        candidates = [
+            os.path.join(BASE_DIR, "chromedriver.exe"),
+            os.path.join(BASE_DIR, "chromedriver", "chromedriver.exe"),
+        ]
+        for path in candidates:
+            if os.path.isfile(path):
+                # Quick sanity check: a real Windows EXE starts with MZ
+                try:
+                    with open(path, "rb") as f:
+                        magic = f.read(2)
+                    if magic == b"MZ":
+                        return path
+                    else:
+                        self.log(f"⚠️  Skipping invalid driver (not a Windows EXE): {path}")
+                except Exception:
+                    pass
+        return None
 
     # ── single job check ─────────────────────
     def check_job(self, job_id: str):

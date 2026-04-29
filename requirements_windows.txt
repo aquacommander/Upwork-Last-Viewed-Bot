@@ -1,6 +1,8 @@
 # Full requirements for Windows deployment + EXE building
+# NOTE: webdriver-manager is intentionally excluded.
+# Selenium 4.10+ includes selenium-manager which downloads
+# the correct Windows chromedriver automatically at runtime.
 selenium==4.20.0
-webdriver-manager==4.0.1
 pystray==0.19.5
 Pillow==10.3.0
 plyer==2.1.0
