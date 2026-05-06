@@ -100,18 +100,6 @@ automatically.
 
 ---
 
-## Troubleshooting
-
-| Problem | Fix |
-|---------|-----|
-| Login fails | Check email/password; Upwork may require CAPTCHA on first login — run without `--headless` to see the browser |
-| No notifications | Make sure Windows Focus Assist is off; try `winotify` or `win10toast` |
-| EXE too large | Normal (~80-120 MB) — it bundles Python + Chrome driver |
-| "No module" error | Run `pip install -r requirements.txt` again |
-| Chrome not found | Install Google Chrome from https://www.google.com/chrome |
-
----
-
 ## Removing Headless Mode (to see the browser)
 
 In `upwork_monitor.py`, comment out this line in the `login()` method:
