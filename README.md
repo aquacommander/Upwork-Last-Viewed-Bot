@@ -10,7 +10,7 @@ Windows notification the moment a client views your proposal (within the last
 
 ### 1. Install Python (if not already installed)
 Download from https://www.python.org/downloads/ — make sure to tick
-**"Add Python to PATH"** during setup.
+
 
 ### 2. Edit credentials (optional — you can also enter them in the UI)
 Open `upwork_monitor.py` and change lines ~25-26:
