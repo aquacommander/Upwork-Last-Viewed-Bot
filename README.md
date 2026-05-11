@@ -88,15 +88,6 @@ automatically.
 
 ---
 
-## Files
-
-| File | Purpose |
-|------|---------|
-| `upwork_monitor.py` | Main application source |
-| `requirements.txt` | Python dependencies |
-| `build_exe.bat` | One-click EXE builder |
-| `upwork_config.json` | Auto-created — saves your watchlist |
-| `upwork_monitor_log.txt` | Auto-created — activity log |
 
 ---
 
