@@ -13,7 +13,6 @@ Download from https://www.python.org/downloads/ — make sure to tick
 
 
 ### 2. Edit credentials (optional — you can also enter them in the UI)
-Open `upwork_monitor.py` and change lines ~25-26:
 ```python
 YOUR_EMAIL    = "your_email@example.com"
 YOUR_PASSWORD = "your_password_here"
