@@ -1,4 +1,3 @@
-# Upwork Last Viewed Monitor
 
 A Windows system-tray bot that monitors Upwork job postings and sends a native
 Windows notification the moment a client views your proposal (within the last
