@@ -60,18 +60,6 @@ automatically.
 
 ---
 
-## Notification Example
-
-```
-┌──────────────────────────────────────────┐
-│  🔔 Upwork Client Alert!                 │
-├──────────────────────────────────────────┤
-│  Job ~703697033 viewed 45 seconds ago!   │
-│                              [Dismiss]   │
-└──────────────────────────────────────────┘
-```
-
----
 
 ## Auto-start with Windows
 
